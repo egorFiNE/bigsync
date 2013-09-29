@@ -1,0 +1,80 @@
+.TH BIGSYNC "1" "November 2012" "bigsync 0.1.1" "User Commands"
+.SH NAME
+bigsync \- backup large files to a slow media
+.SH SYNOPSIS
+.B bigsync
+[\fIOPTION\fR]... 
+.SH DESCRIPTION
+.B Bigsync
+will read the source file in chunks calculating checksums for each one.
+It will compare them with previously stored values for the destination file and
+overwrite changed chunks in it if checksums differ.
+.P
+This is useful for backing up big files (think disk images) over a network link
+to a remote location. 
+.B bigsync
+will read source file thoroughly but will write only the changed chunks to a destination file.
+This is very efficient.
+.SH OPTIONS
+.PP
+.TP
+\fB\-s\fR <path>, \fB\-\-source\fR <path>
+source file name to be back up. Mandatory option.
+.TP
+\fB\-d\fR <path>, \fB\-\-dest\fR <path>
+destination file name or directory.
+If directory specified, then file will
+have the same name in that directory.
+Mandatory option.
+.TP
+\fB\-b\fR <MB>, \fB\-\-blocksize\fR <MB>
+block size in MB. Defaults to 15.
+.TP
+\fB\-S\fR, \fB\-\-sparse\fR 
+make output file sparse. That means that all blocks of the original file that consists solely
+of zeroes will be stored outside of filesystem. This is a safe option for almost any circumstances
+and it is useful for backup of virtual machines, raw devices, etc. Note that not all file systems
+support sparse files. It is still safe to use it if so. 
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR 
+silence is gold.
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR 
+display the checksum of each block and it's status.
+.TP
+\fB\-h\fR, \fB\-\-help\fR 
+display this help and exit
+.TP
+\fB\-V\fR, \fB\-\-version\fR 
+output version information and exit
+.SH BIGSYNC vs RSYNC
+rsync does kind of the same thing, too. But rsync does read both files to calculate checksums, which
+slows down the whole process a lot when working with slow media. bigsync only reads source file, and 
+writes only changed blocks to destination, which minimizes load and access to the destination drive. 
+.SH EXAMPLES
+Backup 
+.B Documents.dmg 
+into 
+.B documents.dmb.backup 
+using block size of 15 megabytes:
+.PP
+	bigsync --source /home/egor/Documents.dmg --dest /media/backup/documents.dmg.backup
+.PP
+Backup operating system disk image to a folder with backups:
+.PP
+	bigsync --source /home/egor/WinSucks.vdi --dest /media/backup/virtualmachines/
+.PP
+Backup raw device into a file:
+.PP
+	bigsync --source /dev/hda1 --dest /media/backup/devices/hda1.backup
+.SH AUTHOR
+Written by Egor Egorov.
+.SH "REPORTING BUGS"
+Report bugs to <me@egorfine.com> or at http://code.google.com/p/bigsync/issues/entry
+.SH COPYRIGHT
+Copyright \(co 2009-2012 Egor Egorov
+.PP
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
