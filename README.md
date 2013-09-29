@@ -25,9 +25,11 @@ Usage: bigsync [options]
 
 Examples:
 
+```
   bigsync --source /home/egor/Documents.dmg --dest /media/backup/documents.dmg.backup
   
   bigsync --blocksize 4 --verbose --source /home/egor/WinSucks.vdi --dest /backup/virtualmachines/
+```
 
 See `man bigsync(1)` for more info.
 
