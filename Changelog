@@ -1,3 +1,26 @@
-0.1.2:
-	* moved to github after Google Code killed my repository
-	* license changed to MIT
+0.1.2 at Sep 29, 2013:
+	* moved to github after Google Code killed my repository;
+	* license changed to MIT.
+
+0.1.1 at Nov 21, 2012:
+	* fixed destination path bug.
+
+0.1.0 at Apr 14, 2012:
+	* sparse files support, raw devices support, bugfixes, test suite.
+
+0.0.9 at Jan 9, 2012:
+	* fixed critical bugs related to support of large files on 32bit systems; also misc fixes.
+
+0.0.8 at Dec 10, 2011:
+	* stat64() changed to stat(); truncate() changed to ftruncate(); misc fixes.
+
+0.0.7 at Apr 9, 2011:
+	* buffer overflow fixed; better compilation options; misc fixes.
+
+0.0.6 at Apr 13, 2010:
+	* verbose and quiet modes added; misc compilation fixes.
+
+0.0.5 at Nov 19, 2009:
+	* initial public release.
+
+	

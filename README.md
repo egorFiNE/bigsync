@@ -1,35 +1,50 @@
 # bigsync 
 
-bigsync: backup large files to a slow media.
+Bigsync is a tool to incrementally backup a single large file to a slow destination (think network media or a cheap NAS). The most common cases for bigsync are disk images, virtual OSes, encrypted volumes and raw devices.
 
-Bigsync will read the source file in chunks calculating checksums for each one.
-It will compare them with previously stored values for the destination file and
-overwrite changed chunks in it if checksums differ.
+Bigsync will read the source file in chunks calculating checksums for each one. It will compare them with previously stored values for the destination file and overwrite changed chunks if checksums differ.
 
-```
-Usage: bigsync [options]
-  --source <path>     | -s <path>        source file name to be read (mandatory)
-  --dest <path>       | -d <path>        destination, file name or directory
-                                         (if directory specified, then file will
-                                         have the same name in that directory,
-                                         mandatory)
-  --blocksize <MB>    | -b <MB>          block size in MB, defaults to 15
+This way we minimize the access to a slow target media which is the whole point of bigsync's existence.
 
-  --verbose           | -v               verbose output
-  --quiet             | -q               only show errors
-	--sparse            | -S               destination file to be sparsa (man dd)
+## Usage
 
-  --version           | -V               version number
-  --help              | -h               this help
-```
-
-Examples:
+Run this periodically: 
 
 ```
-  bigsync --source /home/egor/Documents.dmg --dest /media/backup/documents.dmg.backup
-  
-  bigsync --blocksize 4 --verbose --source /home/egor/WinSucks.vdi --dest /backup/virtualmachines/
+bigsync --source /home/egor/Documents.dmg --dest /media/backup/documents.dmg.backup
 ```
 
-See `man bigsync(1)` for more info.
+For more details see `man bigsync`. 
 
+## bigsync vs rsync
+
+rsync does kind of the same thing, too. But rsync does read both files to calculate checksums, which slows down the whole process a lot when working with slow media. bigsync only reads source file and writes only the changed blocks to destination, which minimizes load and access to the destination drive.
+
+## Installation
+
+Download source. make. make install.
+
+## Supported OS
+
+"Officially" used in and compatible with:
+
+* Any Linux in both 32bit and 64bit;
+* OS X 10.9, Mac OS X 10.8, 10.7 in 64bit;
+* Mac OS X 10.6 in both 32bit and 64bit;
+* Mac OS X 10.5 both PPC and Intel in both 32bit and 64bit.
+
+Perhaps bigsync will work on any POSIX-compatible unix except really ancient ones with broken glibc, like CentOS 4.
+
+## Bugreports/suggestions/patches
+
+Open an issue ticket at GitHub: https://github.com/egorFiNE/bigsync/issues
+
+## History
+
+See `Changelog`. Note: bigsync is rarely updated, because it is nearly perfect. 
+
+## Acknowledgments
+
+Special thanks to Western Digital for producing «MyBook World Edition», which is so incredibly slow that it motivated me to create bigsync.
+
+Thanks to Andrew Suslov for helping me. Thanks to Dirk Huffer for sparse files support.
