@@ -22,16 +22,17 @@ rsync does kind of the same thing, too. But rsync does read both files to calcul
 
 ## Installation
 
-Download source. make. make install.
+Download source. make. make install. make test. 
 
 ## Supported OS
 
 "Officially" used in and compatible with:
 
 * Any Linux in both 32bit and 64bit;
-* OS X 10.9, Mac OS X 10.8, 10.7 in 64bit;
-* Mac OS X 10.6 in both 32bit and 64bit;
-* Mac OS X 10.5 both PPC and Intel in both 32bit and 64bit.
+* macOS (aka OS X aka Mac OS X): 
+** 10.7+ in 64bit (including 10.14);
+** 10.6 in both 32bit and 64bit;
+** 10.5 both PPC and Intel in both 32bit and 64bit.
 
 Perhaps bigsync will work on any POSIX-compatible unix except really ancient ones with broken glibc, like CentOS 4.
 
