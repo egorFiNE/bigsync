@@ -86,23 +86,22 @@ void showGrandTotal(uint64_t totalBytesRead, uint64_t totalBytesWritten, uint64_
 		(unsigned long long) totalBlocksChanged);
 }
 
-char *makeProgressBar(char *progressBar, uint64_t currentPosition, uint64_t totalSize) {
-	float percent = (float) currentPosition/totalSize*100;
-	int p = percent*0.5;
-	if (p>50) { p=50; }
+char *makeProgressBar(uint64_t currentPosition, uint64_t totalSize) {
+	float percent = (float) currentPosition / totalSize * 100;
 
-	char l[51];
-	int i;
-	for (i=0;i<50;i++) {
-		l[i]=' ';
+	int p = percent * 0.5;
+	if (p > 50) {
+		p = 50;
 	}
-	for (i=0;i<p;i++) {
-		l[i]='=';
-	}
-	l[50]=0;
 
-	sprintf(progressBar, " %3d%% [%s] 100%%", (int) percent, l);
-	return progressBar;
+	char line[51];
+	memset(line, ' ', 50);
+	memset(line, '=', p);
+	line[50] = 0;
+
+	char *progressbar;
+	asprintf(&progressbar, " %3d%% [%s] 100%%", (int) percent, line);
+	return progressbar;
 }
 
 void showProgress(
@@ -142,9 +141,9 @@ void showProgress(
 		makeHumanReadableSize(_currentPosHR, currentPosition);
 		printf("\rSyncing %s out of unknown size  ", _currentPosHR);
 	} else {
-		char _progressBar[100];
-		makeProgressBar(_progressBar, currentPosition, totalSize);
-		printf("\r%s ", _progressBar);
+		char *progressBar = makeProgressBar(currentPosition, totalSize);
+		printf("\r%s ", progressBar);
+		free(progressBar);
 	}
 	fflush(stdout);
 }
