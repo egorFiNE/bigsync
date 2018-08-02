@@ -1,3 +1,6 @@
 bigsync
+test
+bigsync-*.gz
+bigsync-*/**
 *.o
 *.tar.gz
