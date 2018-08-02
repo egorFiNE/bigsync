@@ -520,5 +520,7 @@ int main(int argc, char *argv[]) {
 		showElapsedTime(endedAt.tv_sec - startedAt.tv_sec);
 	}
 
+	free(sourceFilename); // not really needed but makes scan-build happy
+
 	return 0;
 }
