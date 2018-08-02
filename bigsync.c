@@ -80,10 +80,12 @@ void showGrandTotal(uint64_t totalBytesRead, uint64_t totalBytesWritten, uint64_
 	makeHumanReadableSize(_totalBytesReadHR, totalBytesRead);
 	makeHumanReadableSize(_totalBytesWrittenHR, totalBytesWritten);
 
-	printf("Total read = %s\nTotal write = %s\nTotal blocks changed = %llu\n",
+	printf(
+		"Total read = %s\nTotal write = %s\nTotal blocks changed = %llu\n",
 		_totalBytesReadHR,
 		_totalBytesWrittenHR,
-		(unsigned long long) totalBlocksChanged);
+		(unsigned long long) totalBlocksChanged
+	);
 }
 
 char *makeProgressBar(uint64_t currentPosition, uint64_t totalSize) {
@@ -126,30 +128,35 @@ void showProgress(
 			case PROGRESS_SAME:
 				printf("%s/%s %s -> same\n", _currentPosHR, _totalSizeHR, readingMD4);
 				break;
+
 			case PROGRESS_DIFFERENT:
 				printf("%s/%s %s -> %s\n", _currentPosHR, _totalSizeHR, readingMD4, storedMD4);
 				break;
+
 			case PROGRESS_NOT_EXISTENT:
 				printf("%s/%s %s -> added\n", _currentPosHR, _totalSizeHR, readingMD4);
 				break;
 		}
+
 		return;
 	}
 
-	if (totalSize==0) {
+	if (totalSize == 0) {
 		char _currentPosHR[100];
 		makeHumanReadableSize(_currentPosHR, currentPosition);
 		printf("\rSyncing %s out of unknown size  ", _currentPosHR);
+
 	} else {
 		char *progressBar = makeProgressBar(currentPosition, totalSize);
 		printf("\r%s ", progressBar);
 		free(progressBar);
 	}
+
 	fflush(stdout);
 }
 
 void showProgressEnd(int reportMode) {
-	if (reportMode==REPORT_MODE_DEFAULT) {
+	if (reportMode == REPORT_MODE_DEFAULT) {
 		printf("\n");
 		fflush(stdout);
 	}
@@ -158,44 +165,53 @@ void showProgressEnd(int reportMode) {
 void showStartingInfo(char *sourceFilename, char *destFilename, uint64_t sourceSize, uint64_t blockSize) {
 	char _blockSizeHR[100];
 	char _sourceSizeHR[100];
+
 	makeHumanReadableSize(_blockSizeHR, blockSize);
 	makeHumanReadableSize(_sourceSizeHR, sourceSize);
+
 	printf("%s -> %s, %s, block size = %s\n", sourceFilename, destFilename, _sourceSizeHR, _blockSizeHR);
 }
 
 void showElapsedTime(uint64_t elapsedTime) {
 	char _elapsedTimeHR[200];
+
 	makeHumanReadableTime(_elapsedTimeHR, elapsedTime);
+
 	printf("Elapsed %s\n", _elapsedTimeHR);
 }
 
 off_t fileSize(char *filename) {
  	struct stat fileStat;
-  if (stat(filename,&fileStat)==-1) {
+
+  if (stat(filename,&fileStat) == -1) {
 		return -1;
 	}
+
 	return fileStat.st_size;
 }
 
 int createEmptyFile(char *filename) {
 	FILE *f = fopen(filename, "w");
-	if (NULL==f) {
+
+	if (NULL == f) {
 		return 0;
 	}
+
 	fclose(f);
+
 	return 1;
 }
 
 void updateBlockInFile(char *block, FILE *source, FILE *dest, uint64_t readBytes, int sparseMode,
 	char *readingMD4, char *storedMD4, char *zeroBlockMD4) {
 
-	if (fseeko(dest, ftello(source)-readBytes, SEEK_SET)==-1) {
+	if (fseeko(dest, ftello(source)-readBytes, SEEK_SET) == -1) {
 		printAndFail("Failed to seek on file: %s\n", strerror(errno));
 	}
 
-	int isSourceBlockZero = strcmp(readingMD4, zeroBlockMD4)==0 ? 1 : 0;
+	int isSourceBlockZero = strcmp(readingMD4, zeroBlockMD4) == 0 ? 1 : 0;
 
-	int shouldWriteBlock=0;
+	int shouldWriteBlock = 0;
 
 	if (sparseMode == SPARSE_MODE_ON) {
 		// Source block is zero, but destination block exists
@@ -203,32 +219,33 @@ void updateBlockInFile(char *block, FILE *source, FILE *dest, uint64_t readBytes
 		// were equal - this function wouldn't have called);
 		// This means previous data is not zero and must be overwritten explicitly.
 		if (isSourceBlockZero && storedMD4) {
-			shouldWriteBlock=1;
+			shouldWriteBlock = 1;
 
 		// Source block is zero, but destination block doesn't exists - we can just seek
 		// and make it sparse.
 		} else if (isSourceBlockZero) {
 			// Actually seek here does nothing, but we still do just to check for possible error.
-			if (fseeko(dest, readBytes, SEEK_CUR)==-1) {
+			if (fseeko(dest, readBytes, SEEK_CUR) == -1) {
 				printAndFail("Failed to sparse seek in file: %s\n", strerror(errno));
 			}
-			shouldWriteBlock=0;
+			shouldWriteBlock = 0;
 
 		// Source block is not zero.
 		} else {
-			shouldWriteBlock=1;
+			shouldWriteBlock = 1;
 		}
 
 	// In no sparse mode we have to always overwrite destination block.
 	} else {
-		shouldWriteBlock=1;
+		shouldWriteBlock = 1;
 	}
 
 	if (shouldWriteBlock) {
-		if (fwrite(block, 1, readBytes, dest)!=readBytes) {
+		if (fwrite(block, 1, readBytes, dest) != readBytes) {
 			printAndFail("Failed to write to file: %s\n", strerror(errno));
 		}
-		if (fsync(fileno(dest))==-1) {
+
+		if (fsync(fileno(dest)) == -1) {
 			printAndFail("Failed to sync destination file: %s\n", strerror(errno));
 		}
 	}
@@ -239,18 +256,19 @@ void updateMD4InChecksumsFile(char *readingMD4, FILE *checksumsFile, int doRepla
 	sprintf(writeMD4, "%s\n", readingMD4);
 
 	if (doReplaceLastChecksumOrAdd == CHECKSUM_REPLACE) {
-		if (fseeko(checksumsFile, -33, SEEK_CUR)==-1) {
+		if (fseeko(checksumsFile, -33, SEEK_CUR) == -1) {
 			printAndFail("Failed to seek on file: %s\n", strerror(errno));
 		}
 	}
-	if (fputs(writeMD4, checksumsFile)==EOF) {
+
+	if (fputs(writeMD4, checksumsFile) == EOF) {
 		printAndFail("Failed to write to file: %s\n", strerror(errno));
 	}
 }
 
 void truncateAndCloseChecksumsFile(FILE *checksumsFile, char *checksumsFilename) {
 	uint64_t checksumsFileTruncation = ftell(checksumsFile);
-	if (ftruncate(fileno(checksumsFile), checksumsFileTruncation)==-1) {
+	if (ftruncate(fileno(checksumsFile), checksumsFileTruncation) == -1) {
 		printAndFail("Failed to truncate file %s: %s\n", checksumsFilename, strerror(errno));
 	}
 	fclose(checksumsFile);
@@ -258,12 +276,13 @@ void truncateAndCloseChecksumsFile(FILE *checksumsFile, char *checksumsFilename)
 
 int isDirectory(char *fileOrDirectoryName) {
  	struct stat fileStat;
-  if (0!=stat(fileOrDirectoryName,&fileStat)) {
+  if (stat(fileOrDirectoryName, &fileStat) != 0) {
 		return -1;
 	}
 
 	if (fileStat.st_mode & S_IFDIR) {
 		return 1;
+
 	} else {
 		return 0;
 	}
@@ -272,11 +291,14 @@ int isDirectory(char *fileOrDirectoryName) {
 char *createDestFilenameFromSource(char *directoryName,  char *sourceFilename) {
 	char *_sourceFilename = basename(sourceFilename);
 
-	directoryName = realloc(directoryName, strlen(directoryName)+strlen(_sourceFilename)+1);
-	if (directoryName[strlen(directoryName)-1]=='/') {
-		directoryName[strlen(directoryName)-1]='\0';
+	directoryName = realloc(directoryName, strlen(directoryName) + strlen(_sourceFilename) + 1);
+
+	if (directoryName[strlen(directoryName)-1] == '/') {
+		directoryName[strlen(directoryName)-1] = 0;
 	}
+
 	sprintf(directoryName, "%s/%s", directoryName, _sourceFilename);
+
 	return directoryName;
 }
 
@@ -295,37 +317,39 @@ void calcMD4(char *block, uint64_t size, char *md4Result) {
 
 	char md4[33];
 	bzero(md4, 33);
+
 	int i;
 	for (i = 0; i < 16; i++) {
 		sprintf(md4, "%s%02x", md4, digest[i]);
 	}
+
 	strncpy(md4Result, md4, 33);
 }
-
 
 int main(int argc, char *argv[]) {
 	int reportMode = REPORT_MODE_DEFAULT;
 	int sparseMode = SPARSE_MODE_OFF;
-	int shouldAssumeZeroSourceSize=0;
 
- 	off_t sourceSize=0;
+	int shouldAssumeZeroSourceSize = 0;
+
+ 	off_t sourceSize = 0;
 	char *sourceFilename = NULL;
-	FILE *sourceFile;
+	FILE *sourceFile = NULL;
 
 	char *destFilename = NULL;
-	FILE *destFile;
+	FILE *destFile = NULL;
 
-	char *checksumsFilename;
-	FILE *checksumsFile;
+	char *checksumsFilename = NULL;
+	FILE *checksumsFile = NULL;
 
-	char *block;
-	uint64_t readBytes=0;
-	off_t totalBytesRead=0;
+	char *block = NULL;
+	uint64_t readBytes = 0;
+	off_t totalBytesRead = 0;
 
-	off_t totalBytesWritten=0;
-	off_t totalBlocksChanged=0;
+	off_t totalBytesWritten = 0;
+	off_t totalBlocksChanged = 0;
 
-	off_t blockSize=1024*1024*15;
+	off_t blockSize = 1024 * 1024 * 15;
 
 	char readingMD4[34];
 	char storedMD4[34];
@@ -355,35 +379,43 @@ int main(int argc, char *argv[]) {
 	while ((ch = getopt_long(argc, argv, "s:d:b:hvqS@", longopts, NULL)) != -1) {
 		switch (ch) {
 			case '@':
-				shouldAssumeZeroSourceSize=1;
+				shouldAssumeZeroSourceSize = 1;
 				break;
+
 			case 's':
 				sourceFilename = strdup(optarg);
 				break;
+
 			case 'd':
 				destFilename = strdup(optarg);
 				break;
+
 			case 'b':
-				if (strncmp(optarg, "_", 1)==0) {
-					blockSize=100000;
+				if (strncmp(optarg, "_", 1) == 0) {
+					blockSize = 100000;
 				} else {
 					blockSize = atoi(optarg);
-					blockSize = blockSize*1024*1024;
+					blockSize = blockSize * 1024 * 1024;
 				}
 				break;
+
 			case 'v':
 				reportMode = REPORT_MODE_VERBOSE;
 				break;
+
 			case 'S':
 				sparseMode = SPARSE_MODE_ON;
 				break;
+
 			case 'q':
 				reportMode = REPORT_MODE_QUIET;
 				break;
+
 			case 'V':
 				showVersion();
 				exit(1);
 				break;
+
 			case 'h':
 			default:
 				showHelp();
@@ -392,21 +424,21 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if (sourceFilename==NULL || destFilename==NULL) {
+	if (sourceFilename == NULL || destFilename == NULL) {
 		showHelp();
 		exit(1);
 	}
 
-	if (isDirectory(destFilename)==1) {
+	if (isDirectory(destFilename) == 1) {
 		destFilename = createDestFilenameFromSource(destFilename, sourceFilename);
 	}
 
 	sourceSize = fileSize(sourceFilename);
 	if (shouldAssumeZeroSourceSize) {
-		sourceSize=0;
+		sourceSize = 0;
 	}
 
-	if (sourceSize<0) {
+	if (sourceSize < 0) {
 		printAndFail("File %s does not exists or could not be read\n", sourceFilename);
 	}
 
@@ -414,11 +446,11 @@ int main(int argc, char *argv[]) {
 
 	gettimeofday(&startedAt, &tzp);
 
-	if (reportMode==REPORT_MODE_VERBOSE) {
+	if (reportMode == REPORT_MODE_VERBOSE) {
 		showStartingInfo(sourceFilename, destFilename, sourceSize, blockSize);
 	}
 
-	if (fileSize(destFilename)<0) {
+	if (fileSize(destFilename) < 0) {
 		if (!createEmptyFile(destFilename)) {
 			printAndFail("Cannot create %s: %s\n", destFilename, strerror(errno));
 		}
@@ -427,22 +459,23 @@ int main(int argc, char *argv[]) {
 	sourceFile = fopen(sourceFilename, "r");
 	destFile = fopen(destFilename, "r+");
 
-	checksumsFilename = malloc(strlen(destFilename)+9);
+	checksumsFilename = malloc(strlen(destFilename) + 9);
 	sprintf(checksumsFilename, "%s.bigsync", destFilename);
 
-	if (fileSize(checksumsFilename)<0) {
+	if (fileSize(checksumsFilename) < 0) {
 		if (!createEmptyFile(checksumsFilename)) {
 			printAndFail("Cannot create %s: %s\n", checksumsFilename, strerror(errno));
 		}
+
 	} else {
-		if (fileSize(checksumsFilename)%33>0) {
+		if (fileSize(checksumsFilename) % 33 > 0) {
 			printAndFail("Size of checksums file %s is not dividable by 33, therefore it's broken.\n",
 				checksumsFilename);
 		}
 	}
 
 	checksumsFile = fopen(checksumsFilename, "r+");
-	if (checksumsFile==NULL) {
+	if (checksumsFile == NULL) {
 		printAndFail("Cannot open %s: %s\n", checksumsFilename, strerror(errno));
 	}
 
@@ -454,25 +487,28 @@ int main(int argc, char *argv[]) {
 
 	while((readBytes = fread(block, 1, blockSize, sourceFile))) {
 		checkForErrorAndExit(sourceFile, sourceFilename);
-		totalBytesRead+=readBytes;
+		totalBytesRead += readBytes;
 
-		readingMD4[0]=0;
+		readingMD4[0] = 0;
 		calcMD4(block, (uint64_t) readBytes, readingMD4);
 
-		storedMD4[0]=0;
+		storedMD4[0] = 0;
 		if (fgets(storedMD4, 34, checksumsFile)) {
-			storedMD4[32]=0;
-			if (0==strncmp(storedMD4, readingMD4, 32)) {
+			storedMD4[32] = 0;
+
+			if (strncmp(storedMD4, readingMD4, 32) == 0) {
 				showProgress((uint64_t) ftello(sourceFile), sourceSize, readingMD4, storedMD4, PROGRESS_SAME, reportMode);
+
 			} else {
 				showProgress((uint64_t) ftello(sourceFile), sourceSize, readingMD4, storedMD4, PROGRESS_DIFFERENT, reportMode);
 
 				updateBlockInFile(block, sourceFile, destFile, readBytes, sparseMode, readingMD4, storedMD4, zeroBlockMD4);
 				updateMD4InChecksumsFile(readingMD4, checksumsFile, CHECKSUM_REPLACE);
 
-				totalBytesWritten+=readBytes;
+				totalBytesWritten += readBytes;
 				totalBlocksChanged++;
 			}
+
 		} else {
 			checkForErrorAndExit(checksumsFile, checksumsFilename);
 			showProgress(ftello(sourceFile), sourceSize, readingMD4, NULL, PROGRESS_NOT_EXISTENT, reportMode);
@@ -480,7 +516,8 @@ int main(int argc, char *argv[]) {
 			updateMD4InChecksumsFile(readingMD4, checksumsFile, CHECKSUM_ADD);
 
 			updateBlockInFile(block, sourceFile, destFile, readBytes, sparseMode, readingMD4, NULL, zeroBlockMD4);
-			totalBytesWritten+=readBytes;
+
+			totalBytesWritten += readBytes;
 			totalBlocksChanged++;
 		}
 	}
@@ -499,6 +536,7 @@ int main(int argc, char *argv[]) {
  	 if (reportMode == REPORT_MODE_VERBOSE) {
 			printf("Fixing sparse file\n");
 		}
+
 		char trailer[1] = "Z";
 		fseeko(destFile, lastSourceFileOffset, SEEK_SET);
 		fwrite(trailer, 1, 1, destFile);
@@ -509,13 +547,13 @@ int main(int argc, char *argv[]) {
 		printf("Truncating file %s to %llu\n", destFilename, (uint64_t) lastSourceFileOffset);
 	}
 
-	if (truncate(destFilename, lastSourceFileOffset)<0) {
+	if (truncate(destFilename, lastSourceFileOffset) < 0) {
 		printAndFail("Failed to truncate %s: %s\n", destFilename, strerror(errno));
 	}
 
 	gettimeofday(&endedAt, &tzp);
 
-	if (reportMode==REPORT_MODE_VERBOSE) {
+	if (reportMode == REPORT_MODE_VERBOSE) {
 		showGrandTotal(totalBytesRead, totalBytesWritten, totalBlocksChanged);
 		showElapsedTime(endedAt.tv_sec - startedAt.tv_sec);
 	}

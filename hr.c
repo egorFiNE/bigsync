@@ -10,45 +10,52 @@
 #define HOUR (60*60)
 
 char *makeHumanReadableSize(char *result, uint64_t size) {
-	if (size >= GIGABYTE) { 
+	if (size >= GIGABYTE) {
 		sprintf(result, "%.3f Gb", (float) ((float)size/(float)GIGABYTE));
-	} else if (size >= MEGABYTE) { 
+
+	} else if (size >= MEGABYTE) {
 		sprintf(result, "%d Mb", (int) (size/MEGABYTE));
-	} else if (size >= KILOBYTE) { 
+
+	} else if (size >= KILOBYTE) {
 		sprintf(result, "%d Kb", (int) (size/KILOBYTE));
+
 	} else {
 		sprintf(result, "%d b", (int) size);
 	}
+
 	return result;
 }
 
 char *makeHumanReadableTime(char *result, long int elapsedSeconds) {
 	int seconds = elapsedSeconds;
-	int hours = seconds/HOUR;
-	seconds-=hours*HOUR;
-	int minutes = seconds/MINUTE;
-	seconds-=minutes*MINUTE;
+	int hours = seconds / HOUR;
+	seconds -= hours * HOUR;
+	int minutes = seconds / MINUTE;
+	seconds -= minutes * MINUTE;
 
-	if (elapsedSeconds >= HOUR) { 
+	if (elapsedSeconds >= HOUR) {
 		if (seconds == 0) {
 			sprintf(result, "%dh%02dm", hours, minutes);
-		} else { 
+		} else {
 			sprintf(result, "%dh%02dm%02ds", hours, minutes, seconds);
 		}
-	} else if (elapsedSeconds >= MINUTE) { 
+
+	} else if (elapsedSeconds >= MINUTE) {
 		if (seconds == 0) {
 			sprintf(result, "%dm", minutes);
-		} else { 
+		} else {
 			sprintf(result, "%dm%02ds", minutes, seconds);
 		}
+
 	} else {
 		sprintf(result, "%lds", elapsedSeconds);
 	}
+
 	return result;
 }
 
 /*
-int main(void) { 
+int main(void) {
 	char hrTime[1024];
 	makeHumanReadableTime(hrTime, 3);
 	printf("%s\n", hrTime);
@@ -76,7 +83,7 @@ int main(void) {
 */
 
 /*
-int main(void) { 
+int main(void) {
 	char hrSize[1024];
 	makeHumanReadableSize(hrSize, 5468867682);
 	printf("%s\n", hrSize);
