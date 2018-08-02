@@ -29,6 +29,10 @@
 #define SPARSE_MODE_OFF 0
 #define SPARSE_MODE_ON 1
 
+#ifndef VERSION
+#define VERSION "0.0.0"
+#endif
+
 void showVersion() {
 	printf("bigsync version " VERSION "\n");
 }
