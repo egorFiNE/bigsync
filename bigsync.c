@@ -1,3 +1,7 @@
+#ifndef _GNU_SOURCE
+  #define _GNU_SOURCE
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
@@ -11,6 +15,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <libgen.h>
+#include <inttypes.h>
 #include "md4_global.h"
 #include "md4.h"
 #include "hr.h"
@@ -81,10 +86,10 @@ void showGrandTotal(uint64_t totalBytesRead, uint64_t totalBytesWritten, uint64_
 	makeHumanReadableSize(_totalBytesWrittenHR, totalBytesWritten);
 
 	printf(
-		"Total read = %s\nTotal write = %s\nTotal blocks changed = %llu\n",
+		"Total read = %s\nTotal write = %s\nTotal blocks changed = %" PRId64 "\n",
 		_totalBytesReadHR,
 		_totalBytesWrittenHR,
-		(unsigned long long) totalBlocksChanged
+		totalBlocksChanged
 	);
 }
 
@@ -102,7 +107,11 @@ char *makeProgressBar(uint64_t currentPosition, uint64_t totalSize) {
 	line[50] = 0;
 
 	char *progressbar;
-	asprintf(&progressbar, " %3d%% [%s] 100%%", (int) percent, line);
+	int res = asprintf(&progressbar, " %3d%% [%s] 100%%", (int) percent, line);
+	if (res < 0) {
+		// if this is the case, you have other things to worry about. meanwhile let's
+		// make sure -Wall stays clear.
+	}
 	return progressbar;
 }
 
@@ -304,7 +313,7 @@ char *createDestFilenameFromSource(char *directoryName,  char *sourceFilename) {
 
 void checkForErrorAndExit(FILE *file, char *fileName) {
 	if (ferror(file)) {
-		printAndFail("Cannot read %s at %llu: %s\n", fileName, ftello(file), strerror(errno));
+		printAndFail("Cannot read %s at %" PRId64 ": %s\n", fileName, ftello(file), strerror(errno));
 	}
 }
 
@@ -544,7 +553,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (reportMode == REPORT_MODE_VERBOSE) {
-		printf("Truncating file %s to %llu\n", destFilename, (uint64_t) lastSourceFileOffset);
+		printf("Truncating file %s to %" PRId64 "\n", destFilename, (uint64_t) lastSourceFileOffset);
 	}
 
 	if (truncate(destFilename, lastSourceFileOffset) < 0) {
