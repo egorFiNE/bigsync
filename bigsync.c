@@ -355,12 +355,10 @@ int main(int argc, char *argv[]) {
 				shouldAssumeZeroSourceSize=1;
 				break;
 			case 's':
-				sourceFilename = malloc(strlen(optarg)+1);
-				strncpy(sourceFilename,optarg,strlen(optarg));
+				sourceFilename = strdup(optarg);
 				break;
 			case 'd':
-				destFilename = malloc(strlen(optarg)+1);
-				strncpy(destFilename,optarg,strlen(optarg));
+				destFilename = strdup(optarg);
 				break;
 			case 'b':
 				if (strncmp(optarg, "_", 1)==0) {
