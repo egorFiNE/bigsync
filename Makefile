@@ -32,5 +32,5 @@ install: bigsync
 
 dist:
 	mkdir bigsync-$(VERSION)
-	cp -R *.c *.h bigsync.1 Makefile README LICENSE bigsync-$(VERSION)/
+	cp -R *.c *.h bigsync.1 Makefile README.md LICENSE bigsync-$(VERSION)/
 	tar cfz bigsync-$(VERSION).tar.gz bigsync-$(VERSION)/
