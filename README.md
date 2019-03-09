@@ -30,9 +30,9 @@ Download source. make. make install. make test.
 
 * Any Linux in both 32bit and 64bit;
 * macOS (aka OS X aka Mac OS X): 
-** 10.7+ in 64bit (including 10.14);
-** 10.6 in both 32bit and 64bit;
-** 10.5 both PPC and Intel in both 32bit and 64bit.
+  * 10.7+ in 64bit (including 10.14);
+  * 10.6 in both 32bit and 64bit;
+  * 10.5 both PPC and Intel in both 32bit and 64bit.
 
 Perhaps bigsync will work on any POSIX-compatible unix except really ancient ones with broken glibc, like CentOS 4.
 
