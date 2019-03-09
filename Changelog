@@ -1,3 +1,6 @@
+0.3.0 at Mar 9, 2019:
+	* added --rebuild
+
 0.2.0 at Aug 2, 2018:
 	* zero new features, only minor refactoring;
 	* updated version number because it is still perfect.
@@ -27,4 +30,4 @@
 0.0.5 at Nov 19, 2009:
 	* initial public release.
 
-	
+

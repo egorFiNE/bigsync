@@ -58,6 +58,7 @@ void showHelp() {
 		"                                         mandatory)\n" \
 		"  --blocksize <MB>    | -b <MB>          block size in MB, defaults to 15\n" \
 		"  --sparse            | -S               destination file to be sparsa (man dd)\n" \
+		"  --rebuild           | -r               only create checksums file, do not actually copy data\n" \
 		"\n" \
 		"  --verbose           | -v               verbose output\n" \
 		"  --quiet             | -q               only show errors\n" \
@@ -338,6 +339,7 @@ void calcMD4(char *block, uint64_t size, char *md4Result) {
 int main(int argc, char *argv[]) {
 	int reportMode = REPORT_MODE_DEFAULT;
 	int sparseMode = SPARSE_MODE_OFF;
+	int shouldOnlyRebuildChecksumsFile = 0;
 
 	int shouldAssumeZeroSourceSize = 0;
 
@@ -381,6 +383,7 @@ int main(int argc, char *argv[]) {
 		{ "verbose",   no_argument,       NULL,       'v' },
 		{ "quiet",     no_argument,       NULL,       'q' },
 		{ "version",   no_argument,       NULL,       'V' },
+		{ "rebuild",   no_argument,       NULL,       'r' },
 		{ "zero",      no_argument,       NULL,       '@' }, // test-only mode
 		{ NULL,        0,                 NULL,       0   }
 	};
@@ -418,6 +421,10 @@ int main(int argc, char *argv[]) {
 
 			case 'q':
 				reportMode = REPORT_MODE_QUIET;
+				break;
+
+			case 'r':
+				shouldOnlyRebuildChecksumsFile = 1;
 				break;
 
 			case 'V':
@@ -459,14 +466,19 @@ int main(int argc, char *argv[]) {
 		showStartingInfo(sourceFilename, destFilename, sourceSize, blockSize);
 	}
 
-	if (fileSize(destFilename) < 0) {
-		if (!createEmptyFile(destFilename)) {
-			printAndFail("Cannot create %s: %s\n", destFilename, strerror(errno));
+	if (!shouldOnlyRebuildChecksumsFile) {
+		if (fileSize(destFilename) < 0) {
+			if (!createEmptyFile(destFilename)) {
+				printAndFail("Cannot create %s: %s\n", destFilename, strerror(errno));
+			}
 		}
+
+		destFile = fopen(destFilename, "r+");
+	} else {
+		printf("Note: only rebuilding checksum file\n");
 	}
 
 	sourceFile = fopen(sourceFilename, "r");
-	destFile = fopen(destFilename, "r+");
 
 	checksumsFilename = malloc(strlen(destFilename) + 9);
 	sprintf(checksumsFilename, "%s.bigsync", destFilename);
@@ -511,7 +523,9 @@ int main(int argc, char *argv[]) {
 			} else {
 				showProgress((uint64_t) ftello(sourceFile), sourceSize, readingMD4, storedMD4, PROGRESS_DIFFERENT, reportMode);
 
-				updateBlockInFile(block, sourceFile, destFile, readBytes, sparseMode, readingMD4, storedMD4, zeroBlockMD4);
+				if (!shouldOnlyRebuildChecksumsFile) {
+					updateBlockInFile(block, sourceFile, destFile, readBytes, sparseMode, readingMD4, storedMD4, zeroBlockMD4);
+				}
 				updateMD4InChecksumsFile(readingMD4, checksumsFile, CHECKSUM_REPLACE);
 
 				totalBytesWritten += readBytes;
@@ -524,7 +538,9 @@ int main(int argc, char *argv[]) {
 
 			updateMD4InChecksumsFile(readingMD4, checksumsFile, CHECKSUM_ADD);
 
-			updateBlockInFile(block, sourceFile, destFile, readBytes, sparseMode, readingMD4, NULL, zeroBlockMD4);
+			if (!shouldOnlyRebuildChecksumsFile) {
+				updateBlockInFile(block, sourceFile, destFile, readBytes, sparseMode, readingMD4, NULL, zeroBlockMD4);
+			}
 
 			totalBytesWritten += readBytes;
 			totalBlocksChanged++;
@@ -541,7 +557,7 @@ int main(int argc, char *argv[]) {
 	truncateAndCloseChecksumsFile(checksumsFile, checksumsFilename);
 
 	// Append a single char and cut it off later, so that the file will be of the right size even if the last blocks were sparse
-	if (sparseMode == SPARSE_MODE_ON) {
+	if (sparseMode == SPARSE_MODE_ON && !shouldOnlyRebuildChecksumsFile) {
  	 if (reportMode == REPORT_MODE_VERBOSE) {
 			printf("Fixing sparse file\n");
 		}
@@ -556,8 +572,10 @@ int main(int argc, char *argv[]) {
 		printf("Truncating file %s to %" PRId64 "\n", destFilename, (uint64_t) lastSourceFileOffset);
 	}
 
-	if (truncate(destFilename, lastSourceFileOffset) < 0) {
-		printAndFail("Failed to truncate %s: %s\n", destFilename, strerror(errno));
+	if (!shouldOnlyRebuildChecksumsFile) {
+		if (truncate(destFilename, lastSourceFileOffset) < 0) {
+			printAndFail("Failed to truncate %s: %s\n", destFilename, strerror(errno));
+		}
 	}
 
 	gettimeofday(&endedAt, &tzp);

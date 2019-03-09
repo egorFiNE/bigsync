@@ -1,9 +1,9 @@
-VERSION=0.2.0
+VERSION=0.3.0
 CC=gcc -Wall -O3 -funroll-loops -D_DARWIN_FEATURE_64_BIT_INODE -D_FILE_OFFSET_BITS=64
 
 all: bigsync
 
-dev: bigsync 
+dev: bigsync
 
 bigsync: bigsync.o md4.o hr.o
 	$(CC) -o bigsync bigsync.o md4.o hr.o

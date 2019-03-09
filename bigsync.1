@@ -1,9 +1,9 @@
-.TH BIGSYNC "1" "August 2018" "bigsync 0.2.0" "User Commands"
+.TH BIGSYNC "1" "August 2018" "bigsync 0.3.0" "User Commands"
 .SH NAME
 bigsync \- backup large files to a slow media
 .SH SYNOPSIS
 .B bigsync
-[\fIOPTION\fR]... 
+[\fIOPTION\fR]...
 .SH DESCRIPTION
 .B Bigsync
 will read the source file in chunks calculating checksums for each one.
@@ -11,7 +11,7 @@ It will compare them with previously stored values for the destination file and
 overwrite changed chunks in it if checksums differ.
 .P
 This is useful for backing up big files (think disk images) over a network link
-to a remote location. 
+to a remote location.
 .B bigsync
 will read source file thoroughly but will write only the changed chunks to a destination file.
 This is very efficient.
@@ -30,32 +30,35 @@ Mandatory option.
 \fB\-b\fR <MB>, \fB\-\-blocksize\fR <MB>
 block size in MB. Defaults to 15.
 .TP
-\fB\-S\fR, \fB\-\-sparse\fR 
+\fB\-S\fR, \fB\-\-sparse\fR
 make output file sparse. That means that all blocks of the original file that consists solely
 of zeroes will be stored outside of filesystem. This is a safe option for almost any circumstances
 and it is useful for backup of virtual machines, raw devices, etc. Note that not all file systems
-support sparse files. It is still safe to use it if so. 
+support sparse files. It is still safe to use it if so.
 .TP
-\fB\-q\fR, \fB\-\-quiet\fR 
+\fB\-r\fR, \fB\-\-rebuild\fR
+do not write destination file, only verify/rebuild the checksums file.
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
 silence is gold.
 .TP
-\fB\-v\fR, \fB\-\-verbose\fR 
+\fB\-v\fR, \fB\-\-verbose\fR
 display the checksum of each block and it's status.
 .TP
-\fB\-h\fR, \fB\-\-help\fR 
+\fB\-h\fR, \fB\-\-help\fR
 display this help and exit
 .TP
-\fB\-V\fR, \fB\-\-version\fR 
+\fB\-V\fR, \fB\-\-version\fR
 output version information and exit
 .SH BIGSYNC vs RSYNC
 rsync does kind of the same thing, too. But rsync does read both files to calculate checksums, which
-slows down the whole process a lot when working with slow media. bigsync only reads source file, and 
-writes only changed blocks to destination, which minimizes load and access to the destination drive. 
+slows down the whole process a lot when working with slow media. bigsync only reads source file, and
+writes only changed blocks to destination, which minimizes load and access to the destination drive.
 .SH EXAMPLES
-Backup 
-.B Documents.dmg 
-into 
-.B documents.dmb.backup 
+Backup
+.B Documents.dmg
+into
+.B documents.dmb.backup
 using block size of 15 megabytes:
 .PP
 	bigsync --source /home/egor/Documents.dmg --dest /media/backup/documents.dmg.backup
