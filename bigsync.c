@@ -34,6 +34,9 @@
 #define SPARSE_MODE_OFF 0
 #define SPARSE_MODE_ON 1
 
+#define TRUNCATE_MODE_OFF 0
+#define TRUNCATE_MODE_ON 1
+
 #ifndef VERSION
 #define VERSION "0.0.0"
 #endif
@@ -59,6 +62,9 @@ void showHelp() {
 		"  --blocksize <MB>    | -b <MB>          block size in MB, defaults to 15\n" \
 		"  --sparse            | -S               destination file to be sparsa (man dd)\n" \
 		"  --rebuild           | -r               only create checksums file, do not actually copy data\n" \
+		"  --notruncate        | -t               do not truncate the destinatation file\n" \
+		"  --checksum <path>   | -c               file name to use as checksum file\n" \
+		"                                         (if none is given then \"<DEST>.bigsync\" is used)\n" \
 		"\n" \
 		"  --verbose           | -v               verbose output\n" \
 		"  --quiet             | -q               only show errors\n" \
@@ -290,9 +296,10 @@ int isDirectory(char *fileOrDirectoryName) {
 		return -1;
 	}
 
-	if (fileStat.st_mode & S_IFDIR) {
+	if (fileStat.st_mode & S_IFBLK) {
+		return 0;
+	} else if (fileStat.st_mode & S_IFDIR) {
 		return 1;
-
 	} else {
 		return 0;
 	}
@@ -339,6 +346,7 @@ void calcMD4(char *block, uint64_t size, char *md4Result) {
 int main(int argc, char *argv[]) {
 	int reportMode = REPORT_MODE_DEFAULT;
 	int sparseMode = SPARSE_MODE_OFF;
+	int truncateMode = TRUNCATE_MODE_ON;
 	int shouldOnlyRebuildChecksumsFile = 0;
 
 	int shouldAssumeZeroSourceSize = 0;
@@ -384,11 +392,13 @@ int main(int argc, char *argv[]) {
 		{ "quiet",     no_argument,       NULL,       'q' },
 		{ "version",   no_argument,       NULL,       'V' },
 		{ "rebuild",   no_argument,       NULL,       'r' },
+		{ "notruncate", no_argument,      NULL,       't' },
+		{ "checksum",  required_argument, NULL,       'c' },
 		{ "zero",      no_argument,       NULL,       '@' }, // test-only mode
 		{ NULL,        0,                 NULL,       0   }
 	};
 
-	while ((ch = getopt_long(argc, argv, "s:d:b:hvqS@", longopts, NULL)) != -1) {
+	while ((ch = getopt_long(argc, argv, "s:d:b:hvqStc:@", longopts, NULL)) != -1) {
 		switch (ch) {
 			case '@':
 				shouldAssumeZeroSourceSize = 1;
@@ -425,6 +435,14 @@ int main(int argc, char *argv[]) {
 
 			case 'r':
 				shouldOnlyRebuildChecksumsFile = 1;
+				break;
+
+			case 't':
+				truncateMode = TRUNCATE_MODE_OFF;
+				break;
+
+			case 'c':
+				checksumsFilename = strdup(optarg);
 				break;
 
 			case 'V':
@@ -480,8 +498,10 @@ int main(int argc, char *argv[]) {
 
 	sourceFile = fopen(sourceFilename, "r");
 
-	checksumsFilename = malloc(strlen(destFilename) + 9);
-	sprintf(checksumsFilename, "%s.bigsync", destFilename);
+	if (checksumsFilename == NULL) {
+		checksumsFilename = malloc(strlen(destFilename) + 9);
+		sprintf(checksumsFilename, "%s.bigsync", destFilename);
+	}
 
 	if (fileSize(checksumsFilename) < 0) {
 		if (!createEmptyFile(checksumsFilename)) {
@@ -572,7 +592,7 @@ int main(int argc, char *argv[]) {
 		printf("Truncating file %s to %" PRId64 "\n", destFilename, (uint64_t) lastSourceFileOffset);
 	}
 
-	if (!shouldOnlyRebuildChecksumsFile) {
+	if (!shouldOnlyRebuildChecksumsFile && truncateMode) {
 		if (truncate(destFilename, lastSourceFileOffset) < 0) {
 			printAndFail("Failed to truncate %s: %s\n", destFilename, strerror(errno));
 		}

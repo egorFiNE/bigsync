@@ -39,6 +39,13 @@ support sparse files. It is still safe to use it if so.
 \fB\-r\fR, \fB\-\-rebuild\fR
 do not write destination file, only verify/rebuild the checksums file.
 .TP
+\fB\-t\fR, \fB\-\-notruncate\fR
+do not truncate the destinatation file.
+.TP
+\fB\-c\fR <path>, \fB\-\-checksum\fR <path>
+file name to use as checksum file
+(defaults to destination file suffixed with .bigsync).
+.TP
 \fB\-q\fR, \fB\-\-quiet\fR
 silence is gold.
 .TP
@@ -70,6 +77,10 @@ Backup operating system disk image to a folder with backups:
 Backup raw device into a file:
 .PP
 	bigsync --source /dev/hda1 --dest /media/backup/devices/hda1.backup
+.PP
+Backup raw device to raw device (block device):
+.PP
+	bigsync --source /dev/hda1 --dest /dev/nbd0 --sparse --notruncate --checksum /tmp/checksum
 .SH AUTHOR
 Written by Egor Egorov.
 .SH "REPORTING BUGS"
