@@ -498,8 +498,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (checksumsFilename == NULL) {
-		checksumsFilename = malloc(strlen(destFilename) + 9);
-		sprintf(checksumsFilename, "%s.bigsync", destFilename);
+		asprintf(&checksumsFilename, "%s.bigsync", destFilename);
 	}
 
 	if (fileSize(checksumsFilename) < 0) {
