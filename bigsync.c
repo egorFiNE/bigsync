@@ -199,7 +199,7 @@ void showElapsedTime(uint64_t elapsedTime) {
 off_t fileSize(char *filename) {
  	struct stat fileStat;
 
-  if (stat(filename,&fileStat) == -1) {
+	if (stat(filename,&fileStat) == -1) {
 		return -1;
 	}
 
@@ -578,7 +578,7 @@ int main(int argc, char *argv[]) {
 
 	// Append a single char and cut it off later, so that the file will be of the right size even if the last blocks were sparse
 	if (sparseMode == SPARSE_MODE_ON && !shouldOnlyRebuildChecksumsFile) {
- 	 if (reportMode == REPORT_MODE_VERBOSE) {
+		if (reportMode == REPORT_MODE_VERBOSE) {
 			printf("Fixing sparse file\n");
 		}
 
