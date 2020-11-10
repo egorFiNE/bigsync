@@ -291,18 +291,8 @@ void truncateAndCloseChecksumsFile(FILE *checksumsFile, char *checksumsFilename)
 }
 
 int isDirectory(char *fileOrDirectoryName) {
- 	struct stat fileStat;
-  if (stat(fileOrDirectoryName, &fileStat) != 0) {
-		return -1;
-	}
-
-	if (fileStat.st_mode & S_IFBLK) {
-		return 0;
-	} else if (fileStat.st_mode & S_IFDIR) {
-		return 1;
-	} else {
-		return 0;
-	}
+	struct stat sb;
+	return (stat(fileOrDirectoryName, &sb) == 0 && S_ISDIR(sb.st_mode)) ? 1 : 0;
 }
 
 char *createDestFilenameFromSource(char *directoryName,  char *sourceFilename) {
