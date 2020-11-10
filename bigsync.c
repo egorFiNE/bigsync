@@ -483,11 +483,18 @@ int main(int argc, char *argv[]) {
 		}
 
 		destFile = fopen(destFilename, "r+");
+		if (NULL == destFile) {
+			printAndFail("Cannot open %s: %s\n", destFilename, strerror(errno));
+		}
+
 	} else {
 		printf("Note: only rebuilding checksum file\n");
 	}
 
 	sourceFile = fopen(sourceFilename, "r");
+	if (NULL == sourceFile) {
+		printAndFail("Cannot open %s: %s\n", sourceFilename, strerror(errno));
+	}
 
 	if (checksumsFilename == NULL) {
 		checksumsFilename = malloc(strlen(destFilename) + 9);
