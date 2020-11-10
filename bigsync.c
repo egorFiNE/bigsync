@@ -210,7 +210,7 @@ off_t fileSize(char *filename) {
 int createEmptyFile(char *filename) {
 	FILE *f = fopen(filename, "w");
 
-	if (NULL == f) {
+	if (f == NULL) {
 		return 0;
 	}
 
@@ -483,7 +483,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		destFile = fopen(destFilename, "r+");
-		if (NULL == destFile) {
+		if (destFile == NULL) {
 			printAndFail("Cannot open %s: %s\n", destFilename, strerror(errno));
 		}
 
@@ -492,7 +492,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	sourceFile = fopen(sourceFilename, "r");
-	if (NULL == sourceFile) {
+	if (sourceFile == NULL) {
 		printAndFail("Cannot open %s: %s\n", sourceFilename, strerror(errno));
 	}
 
