@@ -2,8 +2,8 @@
 #include <stdint.h>
 #include "hr.h"
 
-#define GIGABYTE (1024*1024*1024)
-#define MEGABYTE (1024*1024)
+#define GIGABYTE (1024 * 1024 * 1024)
+#define MEGABYTE (1024 * 1024)
 #define KILOBYTE 1024
 
 #define MINUTE 60
@@ -11,13 +11,13 @@
 
 char *makeHumanReadableSize(char *result, uint64_t size) {
 	if (size >= GIGABYTE) {
-		sprintf(result, "%.3f Gb", (float) ((float)size/(float)GIGABYTE));
+		sprintf(result, "%.3f Gb", (float) ((float) size / (float) GIGABYTE));
 
 	} else if (size >= MEGABYTE) {
-		sprintf(result, "%d Mb", (int) (size/MEGABYTE));
+		sprintf(result, "%d Mb", (int) (size / MEGABYTE));
 
 	} else if (size >= KILOBYTE) {
-		sprintf(result, "%d Kb", (int) (size/KILOBYTE));
+		sprintf(result, "%d Kb", (int) (size / KILOBYTE));
 
 	} else {
 		sprintf(result, "%d b", (int) size);
