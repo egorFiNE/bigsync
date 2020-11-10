@@ -296,18 +296,10 @@ int isDirectory(char *fileOrDirectoryName) {
 	return (stat(fileOrDirectoryName, &sb) == 0 && S_ISDIR(sb.st_mode)) ? 1 : 0;
 }
 
-char *createDestFilenameFromSource(char *directoryName,  char *sourceFilename) {
-	char *_sourceFilename = basename(sourceFilename);
-
-	directoryName = realloc(directoryName, strlen(directoryName) + strlen(_sourceFilename) + 1);
-
-	if (directoryName[strlen(directoryName)-1] == '/') {
-		directoryName[strlen(directoryName)-1] = 0;
-	}
-
-	sprintf(directoryName, "%s/%s", directoryName, _sourceFilename);
-
-	return directoryName;
+char *createDestFilenameFromSource(char *directoryName, char *sourceFilename) {
+	char *destFilename;
+	asprintf(&destFilename, "%s/%s", directoryName, basename(sourceFilename));
+	return destFilename;
 }
 
 void checkForErrorAndExit(FILE *file, char *fileName) {
@@ -346,7 +338,7 @@ int main(int argc, char *argv[]) {
 	char *sourceFilename = NULL;
 	FILE *sourceFile = NULL;
 
-	char *destFilename = NULL;
+	char *destFilenameArgument = NULL;
 	FILE *destFile = NULL;
 
 	char *checksumsFilename = NULL;
@@ -400,7 +392,7 @@ int main(int argc, char *argv[]) {
 				break;
 
 			case 'd':
-				destFilename = strdup(optarg);
+				destFilenameArgument = strdup(optarg);
 				break;
 
 			case 'b':
@@ -449,13 +441,22 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if (sourceFilename == NULL || destFilename == NULL) {
+	if (sourceFilename == NULL || destFilenameArgument == NULL) {
 		showHelp();
 		exit(1);
 	}
 
-	if (isDirectory(destFilename) == 1) {
-		destFilename = createDestFilenameFromSource(destFilename, sourceFilename);
+	char *destFilenameNormalized = realpath(destFilenameArgument, NULL);
+	if (!destFilenameNormalized) {
+		printAndFail("Cannot open %s: %s\n", destFilenameArgument, strerror(errno));
+	}
+
+	char *destFilename;
+	if (isDirectory(destFilenameNormalized) == 1) {
+		destFilename = createDestFilenameFromSource(destFilenameNormalized, sourceFilename);
+		free(destFilenameNormalized);
+	} else {
+		destFilename = destFilenameNormalized;
 	}
 
 	sourceSize = fileSize(sourceFilename);
@@ -603,6 +604,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	free(sourceFilename); // not really needed but makes scan-build happy
+	free(destFilename);
 
 	return 0;
 }
