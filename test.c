@@ -23,13 +23,13 @@ void printAndFail(char *line) {
 
 void createZeroFile(char *filename, size_t size) {
 	FILE *f = fopen(filename, "w");
-	if (!f) { 
+	if (!f) {
 		printAndFail("Cannot create file");
 	}
 
 	char *block = (char*) malloc(size);
 	bzero(block, size);
-	if (fwrite(block, 1, size, f) != size) { 
+	if (fwrite(block, 1, size, f) != size) {
 		printAndFail("Cannot write data 1");
 	}
 	fclose(f);
@@ -37,7 +37,7 @@ void createZeroFile(char *filename, size_t size) {
 
 void changeByte(char *filename, off_t position, char byte) {
 	FILE *f = fopen(filename, "r+");
-	if (!f) { 
+	if (!f) {
 		printAndFail("Cannot create file");
 	}
 
@@ -57,7 +57,7 @@ void changeByte(char *filename, off_t position, char byte) {
 
 void addBytes(char *filename, int countOfBytes, char byte) {
 	FILE *f = fopen(filename, "a+");
-	if (!f) { 
+	if (!f) {
 		printAndFail("Cannot create file");
 	}
 
@@ -76,17 +76,17 @@ void addBytes(char *filename, int countOfBytes, char byte) {
 }
 
 
-uint32_t blocksCount(char *filename) { 
- 	struct stat fileStat; 
-  if (stat(filename,&fileStat)==-1) { 
+uint32_t blocksCount(char *filename) {
+ 	struct stat fileStat;
+  if (stat(filename,&fileStat)==-1) {
 		return -1;
 	}
 	return (uint32_t) fileStat.st_blocks;
 }
 
-off_t fileSize(char *filename) { 
- 	struct stat fileStat; 
-  if (stat(filename,&fileStat)==-1) { 
+off_t fileSize(char *filename) {
+	struct stat fileStat;
+	if (stat(filename,&fileStat)==-1) {
 		return -1;
 	}
 	return  fileStat.st_size;
@@ -94,10 +94,10 @@ off_t fileSize(char *filename) {
 
 int checkFileSize(char *testName, char *filename, size_t referenceSize) {
 	int64_t sourceFileSize = (int64_t) fileSize(filename);
-	if (sourceFileSize == (int64_t) referenceSize) { 
+	if (sourceFileSize == (int64_t) referenceSize) {
 		printf("%s (size): Pass\n", testName);
 		return 1;
-	} else { 
+	} else {
 		allTestsPassed=0;
 		printf("%s (size): FAIL.  Source file size %llu;  Dest file size %llu\n", testName, sourceFileSize, (int64_t) referenceSize);
 		return 0;
@@ -134,7 +134,7 @@ int syncAndCheckMd4(char *testName, char *sourceFilename, char *destFilename, in
 	calcMD4(sourceFilename, md4Source);
 
 	char command[100];
-	sprintf(command, "./bigsync --source %s --dest %s --blocksize _ --quiet %s %s", 
+	sprintf(command, "./bigsync --source %s --dest %s --blocksize _ --quiet %s %s",
 		sourceFilename, destFilename,
 		isSparse ? "--sparse" : "",
 		isSourceZero ? "--zero" : ""
@@ -148,7 +148,7 @@ int syncAndCheckMd4(char *testName, char *sourceFilename, char *destFilename, in
 	if (strcmp(md4Source, md4Dest)==0) {
 		printf("%s (sync): Pass\n", testName);
 		return 1;
-	} else { 
+	} else {
 		allTestsPassed=0;
 		printf("%s (sync): FAIL.  Source MD4 %s;  Dest MD4 %s\n", testName, md4Source, md4Dest);
 		return 0;
@@ -215,7 +215,7 @@ void testSparse() {
 		sparseFailCount++;
 	}
 
-	if (sparseFailCount>0) { 
+	if (sparseFailCount>0) {
 		printf("\n  Warning: sparse mode was enabled, but the destination file doesn't seem\n"
 			"  to occupy less disk space then the original file. For certain file systems it's\n"
 			"  okay as they don't support sparse files.\n\n"
@@ -291,7 +291,7 @@ int main(void) {
 	cleanup();
 	if (allTestsPassed) {
 		printf("\nAll tests passed.\n");
-	} else { 
+	} else {
 		printf("\nSome tests failed to pass.\n");
 	}
 	return 0;
