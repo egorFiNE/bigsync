@@ -291,15 +291,31 @@ void truncateAndCloseChecksumsFile(FILE *checksumsFile, char *checksumsFilename)
 	fclose(checksumsFile);
 }
 
-int isDirectory(char *fileOrDirectoryName) {
-	struct stat sb;
-	return (stat(fileOrDirectoryName, &sb) == 0 && S_ISDIR(sb.st_mode)) ? 1 : 0;
-}
+char *createDestFilenamePath(char *destFilenameArgument, char *sourceFilename) {
+	struct stat fileStat;
 
-char *createDestFilenameFromSource(char *directoryName, char *sourceFilename) {
-	char *destFilename;
-	asprintf(&destFilename, "%s/%s", directoryName, basename(sourceFilename));
-	return destFilename;
+	// doesn't exists
+	if (stat(destFilenameArgument, &fileStat) == -1) {
+		// we dup because we have to return a freeable pointer
+		return strdup(destFilenameArgument);
+	}
+
+	// exists
+
+	char *destFilenameNormalized = realpath(destFilenameArgument, NULL);
+	// doesn't exists (?)
+	if (!destFilenameNormalized) {
+		printAndFail("Cannot open (0) %s: %s\n", destFilenameArgument, strerror(errno));
+	}
+
+	if (S_ISDIR(fileStat.st_mode)) {
+		char *destFilename;
+		asprintf(&destFilename, "%s/%s", destFilenameNormalized, basename(sourceFilename));
+		free(destFilenameNormalized);
+		return destFilename;
+	}
+
+	return destFilenameNormalized;
 }
 
 void checkForErrorAndExit(FILE *file, char *fileName) {
@@ -446,18 +462,7 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
-	char *destFilenameNormalized = realpath(destFilenameArgument, NULL);
-	if (!destFilenameNormalized) {
-		printAndFail("Cannot open %s: %s\n", destFilenameArgument, strerror(errno));
-	}
-
-	char *destFilename;
-	if (isDirectory(destFilenameNormalized) == 1) {
-		destFilename = createDestFilenameFromSource(destFilenameNormalized, sourceFilename);
-		free(destFilenameNormalized);
-	} else {
-		destFilename = destFilenameNormalized;
-	}
+	char *destFilename = createDestFilenamePath(destFilenameArgument, sourceFilename);
 
 	sourceSize = fileSize(sourceFilename);
 	if (shouldAssumeZeroSourceSize) {
