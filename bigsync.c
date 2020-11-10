@@ -508,8 +508,7 @@ int main(int argc, char *argv[]) {
 
 	} else {
 		if (fileSize(checksumsFilename) % 33 > 0) {
-			printAndFail("Size of checksums file %s is not dividable by 33, therefore it's broken.\n",
-				checksumsFilename);
+			printAndFail("Size of checksums file %s is not dividable by 33, therefore it's broken.\n", checksumsFilename);
 		}
 	}
 
