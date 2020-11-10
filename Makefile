@@ -1,4 +1,4 @@
-VERSION=0.4.0
+VERSION=0.4.1
 CC=gcc -Wall -O3 -funroll-loops -D_DARWIN_FEATURE_64_BIT_INODE -D_FILE_OFFSET_BITS=64
 
 all: bigsync

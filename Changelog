@@ -1,3 +1,6 @@
+0.4.1 at Nov 10, 2020:
+	* Additional validations of source and destination paths, additional error handling in file operations
+
 0.4.0 at Mar 28, 2019:
 	* Support raw block devices, added --checksum, --notruncate
 
