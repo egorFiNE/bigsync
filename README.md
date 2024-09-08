@@ -1,6 +1,8 @@
+# Note: bigsync is rarely updated, because it is nearly perfect
+
 # bigsync 
 
-Bigsync is a tool to incrementally backup a single large file to a slow destination (think network media or a cheap NAS). The most common cases for bigsync are disk images, virtual OSes, encrypted volumes and raw devices.
+Bigsync is a tool to incrementally backup a single large file to a slow destination (think network media or a cheap NAS). The most common cases for bigsync are disk images, virtual OS images, encrypted volumes and raw devices.
 
 Bigsync will read the source file in chunks calculating checksums for each one. It will compare them with previously stored values for the destination file and overwrite changed chunks if checksums differ.
 
@@ -30,11 +32,10 @@ Download source. make. make install. make test.
 
 * Any Linux in both 32bit and 64bit;
 * macOS (aka OS X aka Mac OS X): 
-  * 10.7+ in 64bit (including 10.14);
-  * 10.6 in both 32bit and 64bit;
-  * 10.5 both PPC and Intel in both 32bit and 64bit.
+  * any modern version for ARM
+  * 10.5+ both PPC and Intel in both 32bit and 64bit.
 
-Perhaps bigsync will work on any POSIX-compatible unix except really ancient ones with broken glibc, like CentOS 4.
+Perhaps bigsync will work on any POSIX-compatible unix except really ancient ones.
 
 ## Bugreports/suggestions/patches
 
