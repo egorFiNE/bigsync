@@ -328,7 +328,7 @@ void calcMD4(char *block, uint64_t size, char *md4Result) {
 	unsigned char digest[16];
 	MD4_CTX mdContext;
 	MD4Init (&mdContext);
-	MD4Update (&mdContext, block, size);
+	MD4Update (&mdContext, (unsigned char *)block, size);
 	MD4Final (digest, &mdContext);
 
 	char md4[33];
