@@ -124,7 +124,7 @@ void calcMD4(char *filename, char *md4Result) {
 	memset(readingMD4, 0, 33);
 	int i;
 	for (i = 0; i < 16; i++) {
-		sprintf(readingMD4, "%s%02x", readingMD4, digest[i]);
+		sprintf(readingMD4 + i * 2, "%02x", digest[i]);
 	}
 	strncpy(md4Result, readingMD4, 33);
 }
