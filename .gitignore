@@ -4,3 +4,4 @@ bigsync-*.gz
 bigsync-*/**
 *.o
 *.tar.gz
+/build/
