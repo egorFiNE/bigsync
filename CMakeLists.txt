@@ -32,7 +32,6 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS bigsync RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
-install(FILES bigsync.1 DESTINATION "${CMAKE_INSTALL_MANDIR}/man1")
 
 set(dist_name "${PROJECT_NAME}-${PROJECT_VERSION}")
 set(dist_sources
@@ -43,7 +42,6 @@ set(dist_sources
     md4.h
     md4_global.h
     test.c
-    bigsync.1
     CMakeLists.txt
     README.md
     LICENSE

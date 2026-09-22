@@ -6,12 +6,12 @@
 
 - Changelog converted to standard https://keepachangelog.com/ format
 - Makefile -> cmake. It's time, really.
-- Documented historical checksum behavior and added a compatibility test;
-  native word widths and existing sidecar contents remain unchanged.
+- Removed manpage. The last person on Earth who knew troff formatting is no longer with us.
+- Documented historical checksum behavior and added a compatibility test
 
 ### Fixed
 
-- Fixed compilation of ancient md4.c on recent compilers
+- Compilation of ancient md4.c on recent compilers
 
 ## [0.4.1] - 2020-11-10
 
