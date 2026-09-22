@@ -306,6 +306,69 @@ void testBasic(void) {
 	checkFileSize("sync single block size", "testSource.bin", 4000);
 }
 
+void testMaintenance(void) {
+	char sourceMD4[33];
+
+	cleanup();
+	createZeroFile("testSource.bin", 100000);
+	changeByte("testSource.bin", 10, 'x');
+	syncAndCheckMd4("maintenance setup", "testSource.bin", "testDest.bin", 0, 0);
+	calcMD4("testDest.bin", sourceMD4);
+	if (system("./bigsync --source testSource.bin --dest testDest.bin --blocksize 0 --quiet") == 0) {
+		allTestsPassed = 0;
+		printf("invalid block size: FAIL\n");
+	} else {
+		char destinationMD4[33];
+		calcMD4("testDest.bin", destinationMD4);
+		if (strcmp(sourceMD4, destinationMD4) != 0) {
+			allTestsPassed = 0;
+			printf("invalid block size preserves destination: FAIL\n");
+		} else {
+		printf("invalid block size preserves destination: Pass\n");
+		}
+	}
+
+	if (system("./bigsync --source . --dest testDest.bin --blocksize _ --quiet") == 0) {
+		allTestsPassed = 0;
+		printf("source read error: FAIL\n");
+	} else {
+		char destinationMD4[33];
+		calcMD4("testDest.bin", destinationMD4);
+		if (strcmp(sourceMD4, destinationMD4) != 0) {
+			allTestsPassed = 0;
+			printf("source read error preserves destination: FAIL\n");
+		} else {
+			printf("source read error preserves destination: Pass\n");
+		}
+	}
+
+	remove("testDest.bin.bigsync");
+	createZeroFile("testSource.bin", 100000);
+	calcMD4("testSource.bin", sourceMD4);
+	createZeroFile("testDest.bin", 100000);
+	changeByte("testDest.bin", 10, 'x');
+	if (system("./bigsync --source testSource.bin --dest testDest.bin --blocksize _ --sparse --quiet") != 0) {
+		allTestsPassed = 0;
+		printf("uncached sparse block: FAIL\n");
+	} else {
+		char destinationMD4[33];
+		calcMD4("testDest.bin", destinationMD4);
+		if (strcmp(sourceMD4, destinationMD4) != 0) {
+			allTestsPassed = 0;
+			printf("uncached sparse block: FAIL\n");
+		} else {
+			printf("uncached sparse block: Pass\n");
+		}
+	}
+
+	changeByte("testSource.bin", 75000, 'x');
+	syncAndCheckMd4("cache before recreation", "testSource.bin", "testDest.bin", 0, 0);
+	remove("testDest.bin");
+	syncAndCheckMd4("recreated destination", "testSource.bin", "testDest.bin", 0, 0);
+	truncate("testDest.bin", 50000);
+	syncAndCheckMd4("shortened destination", "testSource.bin", "testDest.bin", 0, 0);
+}
+
 int main(void) {
 	testHistoricalChecksum();
 	testBasic();
@@ -314,6 +377,7 @@ int main(void) {
 	testSparse();
 	testZeroSizedSource(0);
 	testZeroSizedSource(1);
+	testMaintenance();
 	cleanup();
 	if (allTestsPassed) {
 		printf("\nAll tests passed.\n");

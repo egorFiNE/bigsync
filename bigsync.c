@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <libgen.h>
 #include <inttypes.h>
+#include <limits.h>
 #include "md4_global.h"
 #include "md4.h"
 #include "hr.h"
@@ -208,15 +209,31 @@ off_t fileSize(char *filename) {
 }
 
 int createEmptyFile(char *filename) {
-	FILE *f = fopen(filename, "w");
-
-	if (f == NULL) {
-		return 0;
+	int fd = open(filename, O_WRONLY | O_CREAT | O_EXCL, 0666);
+	if (fd == -1) {
+		return errno == EEXIST ? 2 : 0;
 	}
 
-	fclose(f);
+	// If we were to pass an exam, we would have to check the return value of close() as well.
+	// However the system where open() succeeds and close() does is so much FUBAR that it
+	// only makes sense to let it burn.
+	close(fd);
 
 	return 1;
+}
+
+void syncDestination(FILE *dest) {
+	// move data to the kernel
+	if (fflush(dest) == EOF) {
+		printAndFail("Failed to flush destination file: %s\n", strerror(errno));
+	}
+
+	// ask the OS to persist that data to storage
+	if (fsync(fileno(dest)) == -1) {
+		printAndFail("Failed to sync destination file: %s\n", strerror(errno));
+	}
+
+	// Yes, just fflush() is not enough.
 }
 
 void updateBlockInFile(char *block, FILE *source, FILE *dest, uint64_t readBytes, int sparseMode,
@@ -226,24 +243,27 @@ void updateBlockInFile(char *block, FILE *source, FILE *dest, uint64_t readBytes
 		printAndFail("Failed to seek on file: %s\n", strerror(errno));
 	}
 
+	off_t blockOffset = ftello(source) - readBytes;
 	int isSourceBlockZero = strcmp(readingMD4, zeroBlockMD4) == 0 ? 1 : 0;
+
+	struct stat destStat;
+	if (fstat(fileno(dest), &destStat) == -1) {
+		printAndFail("Failed to stat destination file: %s\n", strerror(errno));
+	}
+
+	int destinationMayContainData = !S_ISREG(destStat.st_mode) || blockOffset < destStat.st_size;
 
 	int shouldWriteBlock = 0;
 
 	if (sparseMode == SPARSE_MODE_ON) {
-		// Source block is zero, but destination block exists
-		// and it has a different checksum (because if the checksums
-		// were equal - this function wouldn't have called);
-		// This means previous data is not zero and must be overwritten explicitly.
-		if (isSourceBlockZero && storedMD4) {
+		// Seeking would preserve existing bytes, so overwrite them with zeros.
+		if (isSourceBlockZero && (storedMD4 || destinationMayContainData)) {
 			shouldWriteBlock = 1;
 
-		// Source block is zero, but destination block doesn't exists - we can just seek
-		// and make it sparse.
+		// Extend the hole before recording its checksum.
 		} else if (isSourceBlockZero) {
-			// Actually seek here does nothing, but we still do just to check for possible error.
-			if (fseeko(dest, readBytes, SEEK_CUR) == -1) {
-				printAndFail("Failed to sparse seek in file: %s\n", strerror(errno));
+			if (ftruncate(fileno(dest), blockOffset + readBytes) == -1) {
+				printAndFail("Failed to extend sparse file: %s\n", strerror(errno));
 			}
 			shouldWriteBlock = 0;
 
@@ -261,11 +281,9 @@ void updateBlockInFile(char *block, FILE *source, FILE *dest, uint64_t readBytes
 		if (fwrite(block, 1, readBytes, dest) != readBytes) {
 			printAndFail("Failed to write to file: %s\n", strerror(errno));
 		}
-
-		if (fsync(fileno(dest)) == -1) {
-			printAndFail("Failed to sync destination file: %s\n", strerror(errno));
-		}
 	}
+
+	syncDestination(dest);
 }
 
 void updateMD4InChecksumsFile(char *readingMD4, FILE *checksumsFile, int doReplaceLastChecksumOrAdd) {
@@ -284,6 +302,10 @@ void updateMD4InChecksumsFile(char *readingMD4, FILE *checksumsFile, int doRepla
 }
 
 void truncateAndCloseChecksumsFile(FILE *checksumsFile, char *checksumsFilename) {
+	if (fflush(checksumsFile) == EOF) {
+		printAndFail("Failed to flush checksum file %s: %s\n", checksumsFilename, strerror(errno));
+	}
+
 	off_t checksumsFileTruncation = ftello(checksumsFile);
 
 	if (checksumsFileTruncation == (off_t)-1) {
@@ -293,7 +315,9 @@ void truncateAndCloseChecksumsFile(FILE *checksumsFile, char *checksumsFilename)
 	if (ftruncate(fileno(checksumsFile), checksumsFileTruncation) == -1) {
 		printAndFail("Failed to truncate file %s: %s\n", checksumsFilename, strerror(errno));
 	}
-	fclose(checksumsFile);
+	if (fclose(checksumsFile) == EOF) {
+		printAndFail("Failed to close checksum file %s: %s\n", checksumsFilename, strerror(errno));
+	}
 }
 
 char *createDestFilenamePath(char *destFilenameArgument, char *sourceFilename) {
@@ -341,11 +365,32 @@ void calcMD4(char *block, uint64_t size, char *md4Result) {
 
 	int i;
 	for (i = 0; i < 16; i++) {
-		sprintf(md4, "%s%02x", md4, digest[i]);
+		sprintf(md4 + i * 2, "%02x", digest[i]);
 	}
 
 	strncpy(md4Result, md4, 33);
 }
+
+off_t parseBlockSizeArgument(char *optarg) {
+	if (*optarg == '\0' || strspn(optarg, "0123456789") != strlen(optarg)) {
+		return 0;
+	}
+
+	errno = 0;
+	unsigned long long megabytes = strtoull(optarg, NULL, 10);
+
+	if (errno || megabytes == 0) {
+		return 0;
+	}
+
+	off_t bs = (megabytes * 1024ULL * 1024ULL);
+	if (bs > UINT_MAX) {
+		return 0;
+	}
+
+	return bs;
+}
+
 
 int main(int argc, char *argv[]) {
 	int reportMode = REPORT_MODE_DEFAULT;
@@ -417,11 +462,17 @@ int main(int argc, char *argv[]) {
 				break;
 
 			case 'b':
-				if (strncmp(optarg, "_", 1) == 0) {
+				// strncmp(..., 1) also accepts _garbage as the test-only block size.
+				// strcmp accepts only the intended _ token, so malformed arguments are rejected.
+				// Here, optarg points to a null-terminated command-line argument,
+				// and "_" is a string literal so using strcmp is safe.
+				if (strcmp(optarg, "_") == 0) {
 					blockSize = 100000;
 				} else {
-					blockSize = atoi(optarg);
-					blockSize = blockSize * 1024 * 1024;
+					blockSize = parseBlockSizeArgument(optarg);
+					if (blockSize <= 0) {
+						printAndFail("Invalid block size: %s\n", optarg);
+					}
 				}
 				break;
 
@@ -467,6 +518,15 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
+	if (blockSize <= 0 || (uint64_t) blockSize > UINT_MAX) {
+		printAndFail("Invalid block size\n");
+	}
+
+	block = malloc((size_t) blockSize);
+	if (block == NULL) {
+		printAndFail("Cannot allocate block buffer: %s\n", strerror(errno));
+	}
+
 	char *destFilename = createDestFilenamePath(destFilenameArgument, sourceFilename);
 
 	sourceSize = fileSize(sourceFilename);
@@ -486,11 +546,14 @@ int main(int argc, char *argv[]) {
 		showStartingInfo(sourceFilename, destFilename, sourceSize, blockSize);
 	}
 
+	int destinationWasRecreated = 0;
 	if (!shouldOnlyRebuildChecksumsFile) {
 		if (fileSize(destFilename) < 0) {
-			if (!createEmptyFile(destFilename)) {
+			int createResult = createEmptyFile(destFilename);
+			if (!createResult) {
 				printAndFail("Cannot create %s: %s\n", destFilename, strerror(errno));
 			}
+			destinationWasRecreated = createResult == 1;
 		}
 
 		destFile = fopen(destFilename, "r+");
@@ -526,8 +589,10 @@ int main(int argc, char *argv[]) {
 	if (checksumsFile == NULL) {
 		printAndFail("Cannot open %s: %s\n", checksumsFilename, strerror(errno));
 	}
+	if (destinationWasRecreated && ftruncate(fileno(checksumsFile), 0) == -1) {
+		printAndFail("Failed to invalidate checksum file %s: %s\n", checksumsFilename, strerror(errno));
+	}
 
-	block = malloc(blockSize);
 	memset(block, 0, blockSize);
 
 	char zeroBlockMD4[33];
@@ -541,7 +606,22 @@ int main(int argc, char *argv[]) {
 		calcMD4(block, (uint64_t) readBytes, readingMD4);
 
 		storedMD4[0] = 0;
-		if (fgets(storedMD4, 34, checksumsFile)) {
+		int checksumEntryRead = fgets(storedMD4, 34, checksumsFile) != NULL;
+		int isChecksumUsable = checksumEntryRead;
+		off_t blockOffset = ftello(sourceFile) - readBytes;
+		struct stat currentDestStat;
+		if (isChecksumUsable && !shouldOnlyRebuildChecksumsFile) {
+			if (fstat(fileno(destFile), &currentDestStat) == -1) {
+				printAndFail("Failed to stat destination file: %s\n", strerror(errno));
+			}
+
+			if (S_ISREG(currentDestStat.st_mode) &&
+				(blockOffset < 0 || blockOffset > currentDestStat.st_size ||
+				 (uint64_t) (currentDestStat.st_size - blockOffset) < readBytes)) {
+				isChecksumUsable = 0;
+			}
+		}
+		if (isChecksumUsable) {
 			storedMD4[32] = 0;
 
 			if (strncmp(storedMD4, readingMD4, 32) == 0) {
@@ -563,11 +643,10 @@ int main(int argc, char *argv[]) {
 			checkForErrorAndExit(checksumsFile, checksumsFilename);
 			showProgress(ftello(sourceFile), sourceSize, readingMD4, NULL, PROGRESS_NOT_EXISTENT, reportMode);
 
-			updateMD4InChecksumsFile(readingMD4, checksumsFile, CHECKSUM_ADD);
-
 			if (!shouldOnlyRebuildChecksumsFile) {
 				updateBlockInFile(block, sourceFile, destFile, readBytes, sparseMode, readingMD4, NULL, zeroBlockMD4);
 			}
+			updateMD4InChecksumsFile(readingMD4, checksumsFile, checksumEntryRead ? CHECKSUM_REPLACE : CHECKSUM_ADD);
 
 			totalBytesWritten += readBytes;
 			totalBlocksChanged++;
@@ -575,13 +654,12 @@ int main(int argc, char *argv[]) {
 	}
 
 	free(block);
+	checkForErrorAndExit(sourceFile, sourceFilename);
 	showProgressEnd(reportMode);
 
 	off_t lastSourceFileOffset = ftello(sourceFile);
 
 	fclose(sourceFile);
-
-	truncateAndCloseChecksumsFile(checksumsFile, checksumsFilename);
 
 	// Append a single char and cut it off later, so that the file will be of the right size even if the last blocks were sparse
 	if (sparseMode == SPARSE_MODE_ON && !shouldOnlyRebuildChecksumsFile) {
@@ -590,9 +668,11 @@ int main(int argc, char *argv[]) {
 		}
 
 		char trailer[1] = "Z";
-		fseeko(destFile, lastSourceFileOffset, SEEK_SET);
-		fwrite(trailer, 1, 1, destFile);
-		fclose(destFile);
+		if (fseeko(destFile, lastSourceFileOffset, SEEK_SET) == -1 ||
+			fwrite(trailer, 1, 1, destFile) != 1) {
+			printAndFail("Failed to extend sparse destination: %s\n", strerror(errno));
+		}
+		syncDestination(destFile);
 	}
 
 	if (reportMode == REPORT_MODE_VERBOSE) {
@@ -604,6 +684,13 @@ int main(int argc, char *argv[]) {
 			printAndFail("Failed to truncate %s: %s\n", destFilename, strerror(errno));
 		}
 	}
+	if (!shouldOnlyRebuildChecksumsFile && destFile != NULL) {
+		syncDestination(destFile);
+		if (fclose(destFile) == EOF) {
+			printAndFail("Failed to close destination file: %s\n", strerror(errno));
+		}
+	}
+	truncateAndCloseChecksumsFile(checksumsFile, checksumsFilename);
 
 	gettimeofday(&endedAt, &tzp);
 
