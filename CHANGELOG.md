@@ -7,7 +7,7 @@
 - Changelog converted to standard https://keepachangelog.com/ format
 - Makefile -> cmake. It's time, really.
 - Removed manpage. The last person on Earth who knew troff formatting is no longer with us.
-- Documented historical checksum behavior and added a compatibility test
+- Documented historical checksum behavior
 - Reject invalid block sizes before opening output files
 - Abort on source read errors before truncating backups
 - Write zero blocks over existing data in sparse mode (checks whether destination data exists before skipping zero writes)
@@ -15,6 +15,9 @@
 - Flush and sync destination data before recording checksums
 - Additional error checks added
 - Compilation of ancient md4.c on recent compilers fixed
+- Avoid writing the sparse trailer with --notruncate
+- No breaking changes
+- Multitude of tests added
 
 ## [0.4.1] - 2020-11-10
 
