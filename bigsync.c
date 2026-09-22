@@ -284,7 +284,12 @@ void updateMD4InChecksumsFile(char *readingMD4, FILE *checksumsFile, int doRepla
 }
 
 void truncateAndCloseChecksumsFile(FILE *checksumsFile, char *checksumsFilename) {
-	uint64_t checksumsFileTruncation = ftell(checksumsFile);
+	off_t checksumsFileTruncation = ftello(checksumsFile);
+
+	if (checksumsFileTruncation == (off_t)-1) {
+		printAndFail("Failed to get checksum file position %s: %s\n", checksumsFilename, strerror(errno));
+	}
+
 	if (ftruncate(fileno(checksumsFile), checksumsFileTruncation) == -1) {
 		printAndFail("Failed to truncate file %s: %s\n", checksumsFilename, strerror(errno));
 	}
