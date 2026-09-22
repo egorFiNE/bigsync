@@ -28,7 +28,7 @@ void createZeroFile(char *filename, size_t size) {
 	}
 
 	char *block = (char*) malloc(size);
-	bzero(block, size);
+	memset(block, 0, size);
 	if (fwrite(block, 1, size, f) != size) {
 		printAndFail("Cannot write data 1");
 	}
@@ -108,7 +108,7 @@ void calcMD4(char *filename, char *md4Result) {
 	off_t size = fileSize(filename);
 
 	char *block = (char*) malloc(size);
-	bzero(block, size);
+	memset(block, 0, size);
 
 	FILE *f = fopen(filename, "r");
 	fread(block, 1, size, f);
@@ -121,7 +121,7 @@ void calcMD4(char *filename, char *md4Result) {
 	MD4Final (digest, &mdContext);
 
 	char readingMD4[33];
-	bzero(readingMD4, 33);
+	memset(readingMD4, 0, 33);
 	int i;
 	for (i = 0; i < 16; i++) {
 		sprintf(readingMD4, "%s%02x", readingMD4, digest[i]);
@@ -155,13 +155,13 @@ int syncAndCheckMd4(char *testName, char *sourceFilename, char *destFilename, in
 	}
 }
 
-void cleanup() {
+void cleanup(void) {
 	remove("testSource.bin");
 	remove("testDest.bin");
 	remove("testDest.bin.bigsync");
 }
 
-void testSparse() {
+void testSparse(void) {
 	cleanup();
 
 	uint32_t sparseFailCount=0;
@@ -272,7 +272,7 @@ void testCycle(int sparseEnabled) {
 	checkFileSize("truncated", "testDest.bin", 123000);
 }
 
-void testBasic() {
+void testBasic(void) {
 	cleanup();
 
 	createZeroFile("testSource.bin", 4000);

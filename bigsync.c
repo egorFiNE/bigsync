@@ -41,11 +41,11 @@
 #define VERSION "0.0.0"
 #endif
 
-void showVersion() {
+void showVersion(void) {
 	printf("bigsync version " VERSION "\n");
 }
 
-void showHelp() {
+void showHelp(void) {
 	showVersion();
 	printf(
 		"\n" \
@@ -332,7 +332,7 @@ void calcMD4(char *block, uint64_t size, char *md4Result) {
 	MD4Final (digest, &mdContext);
 
 	char md4[33];
-	bzero(md4, 33);
+	memset(md4, 0, 33);
 
 	int i;
 	for (i = 0; i < 16; i++) {
@@ -523,7 +523,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	block = malloc(blockSize);
-	bzero(block, blockSize);
+	memset(block, 0, blockSize);
 
 	char zeroBlockMD4[33];
 	calcMD4(block, (uint64_t) blockSize, zeroBlockMD4);
