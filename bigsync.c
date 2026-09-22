@@ -662,7 +662,7 @@ int main(int argc, char *argv[]) {
 	fclose(sourceFile);
 
 	// Append a single char and cut it off later, so that the file will be of the right size even if the last blocks were sparse
-	if (sparseMode == SPARSE_MODE_ON && !shouldOnlyRebuildChecksumsFile) {
+	if (sparseMode == SPARSE_MODE_ON && truncateMode && !shouldOnlyRebuildChecksumsFile) {
 		if (reportMode == REPORT_MODE_VERBOSE) {
 			printf("Fixing sparse file\n");
 		}

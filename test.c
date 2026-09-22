@@ -35,6 +35,19 @@ void createZeroFile(char *filename, size_t size) {
 	fclose(f);
 }
 
+void createFile(char *filename, const char *contents) {
+	FILE *f = fopen(filename, "w");
+	if (!f) {
+		printAndFail("Cannot create file");
+	}
+
+	size_t size = strlen(contents);
+	if (fwrite(contents, 1, size, f) != size) {
+		printAndFail("Cannot write data");
+	}
+	fclose(f);
+}
+
 void changeByte(char *filename, off_t position, char byte) {
 	FILE *f = fopen(filename, "r+");
 	if (!f) {
@@ -369,6 +382,30 @@ void testMaintenance(void) {
 	syncAndCheckMd4("shortened destination", "testSource.bin", "testDest.bin", 0, 0);
 }
 
+void testSparseNoTruncate(void) {
+	cleanup();
+	createFile("testSource.bin", "hello");
+	createFile("testDest.bin", "abcdefghij");
+
+	if (system("./bigsync --source testSource.bin --dest testDest.bin --blocksize _ --sparse --notruncate --quiet") != 0) {
+		allTestsPassed = 0;
+		printf("sparse no truncate: FAIL\n");
+		return;
+	}
+
+	FILE *f = fopen("testDest.bin", "r");
+	char contents[11] = { 0 };
+	if (!f || fread(contents, 1, 10, f) != 10 || strcmp(contents, "hellofghij") != 0 || fileSize("testDest.bin") != 10) {
+		allTestsPassed = 0;
+		printf("sparse no truncate preserves tail: FAIL\n");
+	} else {
+		printf("sparse no truncate preserves tail: Pass\n");
+	}
+	if (f) {
+		fclose(f);
+	}
+}
+
 int main(void) {
 	testHistoricalChecksum();
 	testBasic();
@@ -378,6 +415,7 @@ int main(void) {
 	testZeroSizedSource(0);
 	testZeroSizedSource(1);
 	testMaintenance();
+	testSparseNoTruncate();
 	cleanup();
 	if (allTestsPassed) {
 		printf("\nAll tests passed.\n");
