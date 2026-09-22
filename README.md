@@ -24,7 +24,7 @@ bigsync \
   --dest /media/backup/documents.dmg.backup
 ```
 
-For more details see `man bigsync`.
+For more details run `bigsync --help`.
 
 ## bigsync vs rsync
 
