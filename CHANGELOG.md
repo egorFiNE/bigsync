@@ -6,6 +6,8 @@
 
 - Changelog converted to standard https://keepachangelog.com/ format
 - Makefile -> cmake. It's time, really.
+- Documented historical checksum behavior and added a compatibility test;
+  native word widths and existing sidecar contents remain unchanged.
 
 ### Fixed
 

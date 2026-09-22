@@ -34,6 +34,13 @@ with slow media. bigsync only reads source file and writes only the changed
 blocks to destination, which minimizes load and access to the destination
 drive.
 
+## 32-bit vs 64-bit systems compatibility notices
+
+Checksums files are not compatible between 32-bit and 64-bit operating systems.
+The MD4 checksum algorithm reports different checksums on those due to
+a historical bug, which should not be fixed in a maintenance-only project
+like bigsync.
+
 ## Installation
 
 Requires CMake 3.20+ and a C compiler.
@@ -55,6 +62,9 @@ Create a source archive with `cmake --build build --target dist`.
 ## Supported OS
 
 Any modern POSIX will do. So practically any Linux, macOS 10.4.0-27.0, etc.
+
+Note that checksums files are incompatible between 32bit and 64bit platforms
+(see above).
 
 ## Bugreports/suggestions/patches
 

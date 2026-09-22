@@ -129,6 +129,31 @@ void calcMD4(char *filename, char *md4Result) {
 	strncpy(md4Result, readingMD4, 33);
 }
 
+void testHistoricalChecksum(void) {
+	const char *message = "abc";
+	/* Historical checksums depend on the native unsigned long width. */
+	const char *expected = sizeof(UINT4) == 8
+		? "a013c51eca433daca5b2a594d21af1fe"
+		: "a448017aaf21d8525fc10ae87aa6729d";
+	unsigned char digest[16];
+	char actual[33];
+	MD4_CTX context;
+
+	MD4Init(&context);
+	MD4Update(&context, (unsigned char *)message, strlen(message));
+	MD4Final(digest, &context);
+	for (int i = 0; i < 16; i++) {
+		sprintf(actual + i * 2, "%02x", digest[i]);
+	}
+
+	if (strcmp(actual, expected) == 0) {
+		printf("Historical checksum: Pass\n");
+	} else {
+		allTestsPassed = 0;
+		printf("Historical checksum: FAIL. Expected %s; got %s\n", expected, actual);
+	}
+}
+
 int syncAndCheckMd4(char *testName, char *sourceFilename, char *destFilename, int isSparse, int isSourceZero) {
 	char md4Source[33];
 	calcMD4(sourceFilename, md4Source);
@@ -282,6 +307,7 @@ void testBasic(void) {
 }
 
 int main(void) {
+	testHistoricalChecksum();
 	testBasic();
 	testCycle(0);
 	testCycle(1);
